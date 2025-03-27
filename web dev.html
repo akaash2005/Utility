@@ -176,6 +176,7 @@
             document.getElementById("htmlOutput").innerHTML = marked.parse(markdown);
         }
 
+        let chartInstance = null; // Store the chart instance globally
         function drawGraph() {
             let funcInput = document.getElementById("functionInput").value;
             let graphType = document.getElementById("graphType").value;
@@ -185,8 +186,13 @@
             canvas.height = 400;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // If a chart instance exists, destroy it before creating a new one
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
             try {
-                	
+                // Use math.compile to handle more complex expressions, including powers
                 const expr = math.compile(funcInput);
                 let xValues = [];
                 let yValues = [];
@@ -194,7 +200,7 @@
                 const xMax = 10;
                 const step = 0.1;
 
-                
+                // Calculate the y values for each x value
                 for (let i = xMin; i <= xMax; i += step) {
                     xValues.push(i);
                     try {
@@ -215,7 +221,7 @@
                 let yMax = Math.max(...yValues);
 
                 //Handle the edge case where yMin === yMax
-                if(yMin === yMax){
+                if (yMin === yMax) {
                     yMin -= 1;
                     yMax += 1;
                 }
@@ -233,11 +239,11 @@
                 }
 
                 function toCanvasY(y) {
-                    return canvas.height - (y - yMin) 
+                    return canvas.height - (y - yMin) / yScale;
                 }
 
                 const data = xValues.map((x, index) => ({ x: toCanvasX(x), y: toCanvasY(yValues[index]) }));
-                new Chart(ctx, {
+                chartInstance = new Chart(ctx, { // Store the chart instance
                     type: 'line',
                     data: {
                         labels: xValues,
@@ -259,8 +265,9 @@
                                 position: 'bottom', // Keep the axis at the bottom
                                 ticks: {
                                     display: true,
-                                    callback: function(value) {
-                                        return value.toFixed(0);                                      }
+                                    callback: function (value) {
+                                        return value.toFixed(0);  // convert it to string
+                                    }
                                 },
                                 grid: {
                                     display: true,
@@ -272,8 +279,8 @@
                                 position: 'left', // Keep the axis on the left
                                 ticks: {
                                     display: true,
-                                    callback: function(value) {
-                                        return value.toFixed(0);  
+                                    callback: function (value) {
+                                        return value.toFixed(0);  // convert it to string
                                     }
                                 },
                                 grid: {
@@ -334,7 +341,7 @@
 
                     if (code) {
                         resultContainer.innerText = `QR Code: ${code.data}`;
-                        stopQRScanner(); 
+                        stopQRScanner(); // Stop scanning after the first successful scan
                     } else {
                         requestAnimationFrame(scan); // Continue scanning
                     }
