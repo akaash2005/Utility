@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utility Tools</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.0/standalone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.0/parser-html.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.12/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/10.0.0/math.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #000000 70%, #004d00, #00ff00 10%);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+        #nav {
+            width: 220px;
+            background: black;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        #nav button {
+            width: 100%;
+            padding: 12px;
+            background: #00ff00;
+            border: none;
+            color: black;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+            text-align: center;
+        }
+        #nav button:hover {
+            background-color: #008000;
+        }
+        #container {
+            flex: 1;
+            padding: 40px;
+            text-align: center;
+        }
+        section {
+            display: none;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            margin: 20px auto;
+            width: 60%;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 255, 0, 0.5);
+        }
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+        input, textarea {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            background: black;
+            color: #00ff00;
+        }
+        button:hover {
+            background-color: #008000;
+        }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: left;
+            overflow-x: auto;
+        }
+        canvas {
+            max-width: 100%;
+        }
+        video {
+            max-width: 100%;
+            display: none; /* Hide video element initially */
+            margin-top: 20px;
+        }
+        #qrResult {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div id="nav">
+        <button onclick="showSection('qrGen')">QR Generator</button>
+        <button onclick="showSection('qrScan')">QR Scanner</button>
+        <button onclick="showSection('formatter')">Code Formatter</button>
+        <button onclick="showSection('markdown')">Markdown to HTML</button>
+        <button onclick="showSection('graph')">Graph Generator</button>
+    </div>
+    
+    <div id="container">
+        <h1>Ultimate Utility Toolkit</h1>
+        <section id="qrGen">
+            <h2>QR Code Generator</h2>
+            <div class="input-container">
+                <input type="text" id="qrText" placeholder="Enter text">
+                <button onclick="generateQRCode()">Generate</button>
+            </div>
+            <div id="qrContainer"></div>
+        </section>
+        
+        <section id="qrScan">
+            <h2>QR Code Scanner</h2>
+            <button onclick="startQRScanner()">Start Camera</button>
+            <video id="qrVideo" autoplay></video>
+            <p id="qrResult"></p>
+        </section>
+        
+        <section id="formatter">
+            <h2>Code Formatter</h2>
+            <div class="input-container">
+                <textarea id="codeInput" rows="5" placeholder="Paste your code here..."></textarea>
+                <button onclick="formatCode()">Format</button>
+            </div>
+            <pre id="formattedCode"></pre>
+        </section>
+        
+        <section id="markdown">
+            <h2>Markdown to HTML</h2>
+            <textarea id="markdownInput" rows="5" placeholder="Enter Markdown..."></textarea>
+            <button onclick="convertMarkdown()">Convert</button>
+            <div id="htmlOutput"></div>
+        </section>
+        
+        <section id="graph">
+            <h2>Graph Generator</h2>
+            <input type="text" id="functionInput" placeholder="Enter function (e.g., x^2)">
+            <select id="graphType">
+                <option value="cartesian">Cartesian</option>
+                <option value="polar">Polar</option>
+            </select>
+            <button onclick="drawGraph()">Draw</button>
+            <canvas id="graphCanvas"></canvas>
+        </section>
+    </div>
+
+    <script>
+        function showSection(id) {
+            document.querySelectorAll('section').forEach(sec => sec.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+        }
+        
+        function generateQRCode() {
+            let text = document.getElementById("qrText").value;
+            if (!text) return alert("Enter text to generate QR Code");
+            let qrContainer = document.getElementById("qrContainer");
+            qrContainer.innerHTML = "";
+            let qrCanvas = document.createElement("canvas");
+            qrContainer.appendChild(qrCanvas);
+            QRCode.toCanvas(qrCanvas, text, function (error) {
+                if (error) alert("QR Code generation failed!");
+            });
+        }
+        
+        function convertMarkdown() {
+            let markdown = document.getElementById("markdownInput").value;
+            document.getElementById("htmlOutput").innerHTML = marked.parse(markdown);
+        }
+
+        function drawGraph() {
+            let funcInput = document.getElementById("functionInput").value;
+            let graphType = document.getElementById("graphType").value;
+            let canvas = document.getElementById("graphCanvas");
+            let ctx = canvas.getContext("2d");
+            canvas.width = 500;
+            canvas.height = 400;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            try {
+                	
+                const expr = math.compile(funcInput);
+                let xValues = [];
+                let yValues = [];
+                const xMin = -10;
+                const xMax = 10;
+                const step = 0.1;
+
+                
+                for (let i = xMin; i <= xMax; i += step) {
+                    xValues.push(i);
+                    try {
+                        const y = graphType === "polar" ? expr.evaluate({ x: i }) * Math.sin(i) : expr.evaluate({ x: i });
+                        yValues.push(y);
+                    } catch (e) {
+                        console.error("Error evaluating function at x =", i, ":", e);
+                        alert("Error evaluating the function. Please check your input and ensure it's valid for all x values in the range.  Error Details: " + e.message);
+                        return;
+                    }
+                }
+
+                console.log("xValues:", xValues);
+                console.log("yValues:", yValues);
+
+                // Find min and max values for scaling
+                let yMin = Math.min(...yValues);
+                let yMax = Math.max(...yValues);
+
+                //Handle the edge case where yMin === yMax
+                if(yMin === yMax){
+                    yMin -= 1;
+                    yMax += 1;
+                }
+
+                // Calculate scale factors
+                const xScale = (xMax - xMin) / canvas.width;
+                const yScale = (yMax - yMin) / canvas.height;
+                const centerX = -xMin / xScale;
+                const centerY = canvas.height + yMin / yScale;
+
+
+                // Function to convert x, y to canvas coordinates
+                function toCanvasX(x) {
+                    return (x - xMin) / xScale;
+                }
+
+                function toCanvasY(y) {
+                    return canvas.height - (y - yMin) 
+                }
+
+                const data = xValues.map((x, index) => ({ x: toCanvasX(x), y: toCanvasY(yValues[index]) }));
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: xValues,
+                        datasets: [{
+                            label: 'Graph',
+                            data: data,
+                            borderColor: '#00ff00',
+                            fill: false,
+                            pointRadius: 0, // Do not show points
+                            lineWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        animation: false,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom', // Keep the axis at the bottom
+                                ticks: {
+                                    display: true,
+                                    callback: function(value) {
+                                        return value.toFixed(0);                                      }
+                                },
+                                grid: {
+                                    display: true,
+                                    color: 'rgba(255, 255, 255, 0.1)',
+                                },
+                            },
+                            y: {
+                                type: 'linear',
+                                position: 'left', // Keep the axis on the left
+                                ticks: {
+                                    display: true,
+                                    callback: function(value) {
+                                        return value.toFixed(0);  
+                                    }
+                                },
+                                grid: {
+                                    display: true,
+                                    color: 'rgba(255, 255, 255, 0.1)',
+                                },
+                            },
+                        },
+                        plugins: {
+                            legend: {
+                                display: false,
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error compiling function:", error);
+                alert("Invalid function input. Please enter a valid mathematical expression. Error Details: " + error.message);
+                return;
+            }
+        }
+
+
+        function formatCode() {
+            let code = document.getElementById("codeInput").value;
+            try {
+                let formatted = prettier.format(code, {
+                    parser: "html",
+                    plugins: [prettierPlugins.html]
+                });
+                document.getElementById("formattedCode").innerText = formatted;
+            } catch (error) {
+                alert("Formatting error: " + error.message);
+            }
+        }
+
+        let videoStream; // Keep track of the video stream
+        async function startQRScanner() {
+            const video = document.getElementById('qrVideo');
+            const resultContainer = document.getElementById('qrResult');
+
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = videoStream;
+                video.style.display = 'block'; //show the video
+                resultContainer.innerText = 'Scanning...';
+
+                function scan() {
+                    if (video.style.display === 'none') return;
+
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    canvas.height = video.videoHeight;
+                    canvas.width = video.videoWidth;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, canvas.width, canvas.height);
+
+                    if (code) {
+                        resultContainer.innerText = `QR Code: ${code.data}`;
+                        stopQRScanner(); 
+                    } else {
+                        requestAnimationFrame(scan); // Continue scanning
+                    }
+                }
+                scan(); //start scanning.
+
+            } catch (err) {
+                console.error("Error accessing the camera:", err);
+                resultContainer.innerText = `Error accessing camera: ${err.message}`;
+            }
+        }
+
+        function stopQRScanner() {
+            const video = document.getElementById('qrVideo');
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                videoStream = null;
+            }
+            video.style.display = 'none'; // Hide the video element when scanning stops
+        }
+    </script>
+</body>
+</html>
